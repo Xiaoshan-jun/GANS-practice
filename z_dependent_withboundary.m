@@ -32,7 +32,9 @@
 
 clc;
 clear all;
-
+fileID = fopen('airplane_train.txt','w');
+t = 0;
+for (i = 1 : 200)
 % Configure parameters
 deltaT=0.1;
 t_simulation=200;
@@ -42,7 +44,6 @@ R_mu=100;
 R_min=50;
 T_mu=0.6349;
 R_positive_proba=0.5;
-
 % Set the boundary
 x_boundary=1000;y_boundary=1000;z_boundary=500;
 x=1/2*x_boundary;
@@ -59,86 +60,92 @@ x_buffer_up=x_boundary-dx_boundary;y_buffer_up=y_boundary-dy_boundary;z_buffer_u
 x_buffer_down=0+dx_boundary;y_buffer_down=0+dy_boundary;z_buffer_down=0+dz_boundary;
 
 %Draw the boundary
-figure;
-axis([0 x_boundary 0 y_boundary 0 z_boundary]);
-hold on;
+%figure;
+%axis([0 x_boundary 0 y_boundary 0 z_boundary]);
+%hold on;
 
-while (t_simulation>0)
-    % Randomly generate a travel time interval, which follows an  exponential distribution 
-    travel_time_interval=random('exponential',T_mu);
-    % Randomly generate the turn radius, which follows a truncated exponential distribution 
-    r=(2*(rand<R_positive_proba)-1)*1./randomNumTrunExpDis(1/R_mu,0,1/R_min,1);
-    % When the aircraft enters the buffer zone, set the turn radius to minimum turn radius. 
-    if(x<x_buffer_down||y<x_buffer_down||z<x_buffer_down||x_buffer_up||y>x_buffer_up||z>x_buffer_up)
-     r=R_min ;
-    end
-    x=p(1);
-    y=p(2);
-    z=p(3);
-    v=alpha*v+(1-alpha)*v_mu+sqrt((1-alpha^2))*v_sig*randn;
-    vx=v(1);
-    vy=v(2);
-    vz=v(3);
-    theta=cos(asin(abs(vz)/sqrt(vx^2+vy^2+vz^2)));
-    beta=r*theta;
-    [cx, cy,cz]= calculateTurningCenter(p,beta,r,v);
-    pc=[cx-p(1);cy-p(2);cz-p(3)];
-
-    % Calculate the acceleration
-    at=0;
-    an=sum(v.^2)/r;
-    aa=sqrt(an^2+at^2);
-    a=an*pc./norm(pc)+at*v./norm(v);
-    ax=a(1);
-    ay=a(2);
-    az=a(3);
-    
-    % Begin to move  
-    state=[x;vx;ax;y;vy;ay;z;vz;az];
-    w=norm(cross(v,a)./(norm(v)^2));
-    A=[1,sin(w*deltaT)/w,(1-cos(w*deltaT))/(w^2);
-        0,cos(w*deltaT),sin(w*deltaT)/w;
-        0,-w*sin(w*deltaT),cos(w*deltaT)];
-    I=[0 0 0;0 0 0;0 0 0];
-    
-
-    %When the aircraft is in the buffer zone
-    while(state(1)<x_buffer_down||state(4)<y_buffer_down||state(7)<z_buffer_down||state(1)>x_buffer_up||state(4)>y_buffer_up||state(7)>z_buffer_up)
-        travel_time_interval=0;
-        vi=norm([state(2),state(5),state(8)]);
-        state=[A I I;I A I;I I A]*state;
-        t_simulation=t_simulation-deltaT;
-        plot3(state(1),state(4),state(7),'Marker','o','MarkerSize',3,'MarkerEdgeColor','r');
-        hold on;
-        xlabel('X(m)','FontSize',16);
-        ylabel('Y(m)','FontSize',16);
-        zlabel('Z(m)','FontSize',16);
-        M=getframe;
-        t_simulation=t_simulation-deltaT;
-    end
-    
-   %When the aircraft is out of the buffer zone
-    while travel_time_interval>0
-        vi=norm([state(2),state(5),state(8)]);
-        state=[A I I;I A I;I I A]*state;
-        travel_time_interval=travel_time_interval-deltaT;
-        t_simulation=t_simulation-deltaT;
-        plot3(state(1),state(4),state(7),'Marker','o','MarkerSize',3,'MarkerEdgeColor','r');
-        hold on;
-        xlabel('X(m)','FontSize',16);
-        ylabel('Y(m)','FontSize',16);
-        zlabel('Z(m)','FontSize',16);
-        M=getframe;
-        %When the aircraft enters the buffer zone
-        if(state(1)<x_buffer_down||state(4)<y_buffer_down||state(7)<z_buffer_down||state(1)>x_buffer_up||state(4)>y_buffer_up||state(7)>z_buffer_up)
-            break;
+    while (t_simulation>0)
+        % Randomly generate a travel time interval, which follows an  exponential distribution 
+        travel_time_interval=random('exponential',T_mu);
+        % Randomly generate the turn radius, which follows a truncated exponential distribution 
+        r=(2*(rand<R_positive_proba)-1)*1./randomNumTrunExpDis(1/R_mu,0,1/R_min,1);
+        % When the aircraft enters the buffer zone, set the turn radius to minimum turn radius. 
+        if(x<x_buffer_down||y<x_buffer_down||z<x_buffer_down||x_buffer_up||y>x_buffer_up||z>x_buffer_up)
+         r=R_min ;
         end
-    end
-    p=[state(1),state(4),state(7)];
-    v=[state(2);state(5);state(8)];
-    a=[state(3);state(6);state(9)];
+        x=p(1);
+        y=p(2);
+        z=p(3);
+        v=alpha*v+(1-alpha)*v_mu+sqrt((1-alpha^2))*v_sig*randn;
+        vx=v(1);
+        vy=v(2);
+        vz=v(3);
+        theta=cos(asin(abs(vz)/sqrt(vx^2+vy^2+vz^2)));
+        beta=r*theta;
+        [cx, cy,cz]= calculateTurningCenter(p,beta,r,v);
+        pc=[cx-p(1);cy-p(2);cz-p(3)];
 
+        % Calculate the acceleration
+        at=0;
+        an=sum(v.^2)/r;
+        aa=sqrt(an^2+at^2);
+        a=an*pc./norm(pc)+at*v./norm(v);
+        ax=a(1);
+        ay=a(2);
+        az=a(3);
+
+        % Begin to move  
+        state=[x;vx;ax;y;vy;ay;z;vz;az];
+        w=norm(cross(v,a)./(norm(v)^2));
+        A=[1,sin(w*deltaT)/w,(1-cos(w*deltaT))/(w^2);
+            0,cos(w*deltaT),sin(w*deltaT)/w;
+            0,-w*sin(w*deltaT),cos(w*deltaT)];
+        I=[0 0 0;0 0 0;0 0 0];
+
+
+        %When the aircraft is in the buffer zone
+        while(state(1)<x_buffer_down||state(4)<y_buffer_down||state(7)<z_buffer_down||state(1)>x_buffer_up||state(4)>y_buffer_up||state(7)>z_buffer_up)
+            travel_time_interval=0;
+            vi=norm([state(2),state(5),state(8)]);
+            state=[A I I;I A I;I I A]*state;
+            t_simulation=t_simulation-deltaT;
+            %plot3(state(1),state(4),state(7),'Marker','o','MarkerSize',3,'MarkerEdgeColor','r');
+            t = t + deltaT;
+            fprintf(fileID,'%4.2f\t%i\t%4.4f\t%4.4f\t%4.4f\n',t,i,state(1),state(4),state(7));
+            %hold on;
+            %xlabel('X(m)','FontSize',16);
+            %ylabel('Y(m)','FontSize',16);
+            %zlabel('Z(m)','FontSize',16);
+            %M=getframe;
+            t_simulation=t_simulation-deltaT;
+        end
+
+       %When the aircraft is out of the buffer zone
+        while travel_time_interval>0
+            vi=norm([state(2),state(5),state(8)]);
+            state=[A I I;I A I;I I A]*state;
+            travel_time_interval=travel_time_interval-deltaT;
+            t_simulation=t_simulation-deltaT;
+            %plot3(state(1),state(4),state(7),'Marker','o','MarkerSize',3,'MarkerEdgeColor','r');
+            t = t + deltaT;
+            fprintf(fileID,'%4.2f\t%i\t%4.4f\t%4.4f\t%4.4f\n',t,i,state(1),state(4),state(7));
+            %hold on;
+            xlabel('X(m)','FontSize',16);
+            ylabel('Y(m)','FontSize',16);
+            zlabel('Z(m)','FontSize',16);
+            %M=getframe;
+            %When the aircraft enters the buffer zone
+            if(state(1)<x_buffer_down||state(4)<y_buffer_down||state(7)<z_buffer_down||state(1)>x_buffer_up||state(4)>y_buffer_up||state(7)>z_buffer_up)
+                break;
+            end
+        end
+        p=[state(1),state(4),state(7)];
+        v=[state(2);state(5);state(8)];
+        a=[state(3);state(6);state(9)];
+
+    end
 end
+fclose(fileID);
 
 % Calculate the position of the turning center 
 function [cx, cy, cz]= calculateTurningCenter(p,beta,r,v)
